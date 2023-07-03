@@ -9,7 +9,7 @@
           |                |
           +----------------+  
 
-  last update: may 1st, 2023. Not tested with web server
+  last update: july 2, 2023. Already Tested with web server
   todo: 
   [x] check it compiles
   [x] upload to board, seems to be working
@@ -22,23 +22,15 @@
 #include <Wire.h>
 #include "MAX30100_PulseOximeter.h"
 
-// Replace with your network credentials
 // const char* ssid     = "INFINITUM6830";
 // const char* password = "FYvBJDhAUj";
 const char* ssid     = "REIKA-2";
 const char* password = "REIKA3110";
 
-// REPLACE with your Domain name and URL path or IP address with path
 // const char* serverName = "http://192.168.1.66/_experiments/esp_32/post_insert.php";
 const char* serverName = "http://192.168.0.22/_experiments/esp_32/post_insert.php";
-// C:\wamp64\www\_experiments\esp_32\post_insert.php
 
-// Keep this API Key value to be compatible with the PHP code provided in the project page. 
-// If you change the apiKeyValue value, the PHP file /post-esp-data.php also needs to have the same key 
 String apiKeyValue = "tPmAT5Ab3j7F9";
-
-// String sensorName = "BME280";
-// String sensorLocation = "Office";
 
 PulseOximeter pulse_oximeter;
 float pulse_oximeter_values[2];
@@ -78,17 +70,18 @@ void loop() {
     https.addHeader("Content-Type", "application/x-www-form-urlencoded");
     
     // Prepare your HTTP POST request data
-    // String httpRequestData = "api_key=" + apiKeyValue + "&sensor=" + sensorName
-    //                       + "&location=" + sensorLocation + "&value1=" + String(pulse_oximeter_values[0])
-    //                       + "&value2=" + String(pulse_oximeter_values[1]) + "";
-    // Serial.print("httpRequestData: ");
-    // Serial.println(httpRequestData);
+    String httpRequestData = "api_key=" + apiKeyValue + "&sensor_names=" + "MAX30100"
+                          + "&temperature=" + String(0)
+                          + "&heart_rate=" + String(pulse_oximeter_values[0]) 
+                          + "&oxygen_saturation=" + String(pulse_oximeter_values[1]);
+    Serial.print("httpRequestData: ");
+    Serial.println(httpRequestData);
     
     // You can comment the httpRequestData variable above
     // then, use the httpRequestData variable below (for testing purposes without the BME280 sensor)
-    String httpRequestData = "api_key=tPmAT5Ab3j7F9&sensors_names=max30100&temperature=24.75&heart_rate=49.54&oxygen_saturation=1005.14";
-    Serial.print("httpRequestData: ");
-    Serial.println(httpRequestData);
+    // String httpRequestData = "api_key=tPmAT5Ab3j7F9&sensors_names=max30100&temperature=24.75&heart_rate=49.54&oxygen_saturation=1005.14";
+    // Serial.print("httpRequestData: ");
+    // Serial.println(httpRequestData);
 
     // Send HTTP POST request
     int httpResponseCode = https.POST(httpRequestData);
