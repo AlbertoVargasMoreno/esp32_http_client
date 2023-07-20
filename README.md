@@ -9,7 +9,7 @@ max30100 examples
 
 last update: jul 20st, 2023. tested with web server
 todo: 
-[x] check it compiles
-[x] upload to board, seems to be working
-[x] check request succesfully done
-[x] check sensor successfully reading, always reading zeros
+- [x] check it compiles
+- [x] upload to board, seems to be working
+- [x] check request succesfully done
+- [x] check sensor successfully reading, always reading zeros
