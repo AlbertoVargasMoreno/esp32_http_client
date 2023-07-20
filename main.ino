@@ -1,4 +1,11 @@
 /*
+  based on 
+  https://RandomNerdTutorials.com/esp32-esp8266-mysql-database-php/
+
+  https://github.com/RuiSantosdotme/ESP32-ESP8266-PHP-MySQL/blob/master/code/HTTPS_ESP32_MySQL_Database_PHP.ino
+
+  max30100 examples  
+
                 ESP32
           +----------------+
           |                |
@@ -31,11 +38,21 @@ const char* password = "REIKA3110";
 // REPLACE with your Domain name and URL path or IP address with path
 // const char* serverName = "http://192.168.1.66/_experiments/esp_32/post_insert.php";
 const char* serverName = "http://192.168.0.22/_experiments/esp_32/post_insert.php";
- 
+// C:\wamp64\www\_experiments\esp_32\post_insert.php
+
+// Keep this API Key value to be compatible with the PHP code provided in the project page. 
+// If you change the apiKeyValue value, the PHP file /post-esp-data.php also needs to have the same key 
 String apiKeyValue = "tPmAT5Ab3j7F9";
+
+// String sensorName = "BME280";
+// String sensorLocation = "Office";
 
 PulseOximeter pulse_oximeter;
 float pulse_oximeter_values[2];
+
+#define ADC_VREF_mV    3300.0 // in millivolt
+#define ADC_RESOLUTION 4096.0
+#define PIN_LM35       36 // ESP32 pin GIOP36 (ADC0) connected to LM35
 
 void setup() {
   Serial.begin(115200);
@@ -61,6 +78,8 @@ void loop() {
 
     Serial.print("O:");
     Serial.println(pulse_oximeter_values[1]);
+
+    float tempC = read_temperature_sensor();
   
   if (!(WiFi.status() == WL_CONNECTED)) {
     Serial.println("WiFi Disconnected");
@@ -70,7 +89,7 @@ void loop() {
     request.begin(serverName);
     request.addHeader("Content-Type", "application/x-www-form-urlencoded");
     String httpRequestData = "api_key=" + apiKeyValue + "&sensor_names=" + "MAX30100"
-                          + "&temperature=" + String(0)
+                          + "&temperature=" + String(tempC)
                           + "&heart_rate=" + String(pulse_oximeter_values[0]) 
                           + "&oxygen_saturation=" + String(pulse_oximeter_values[1]);
     Serial.print("httpRequestData: ");
@@ -112,7 +131,7 @@ void setup_pulse_oximeter()
     // or wrong target chip
     if (!pulse_oximeter.begin()) {
         Serial.println("FAILED");
-        for(;;);
+        // for(;;);
     } else {
         Serial.println("SUCCESS");
     }
@@ -134,4 +153,25 @@ void read_sensor()
   pulse_oximeter_values[0] = pulse_oximeter.getHeartRate();
   pulse_oximeter_values[1] = pulse_oximeter.getSpO2();
   // return sensor_readings;
+}
+
+float read_temperature_sensor()
+{
+  // read the ADC value from the temperature sensor
+  int adcVal = analogRead(PIN_LM35);
+  // convert the ADC value to voltage in millivolt
+  float milliVolt = adcVal * (ADC_VREF_mV / ADC_RESOLUTION);
+  // convert the voltage to the temperature in °C
+  float tempC = milliVolt / 10;
+  // convert the °C to °F
+  float tempF = tempC * 9 / 5 + 32;
+
+  // print the temperature in the Serial Monitor:
+  // Serial.print("Temperature: ");
+  // Serial.print(tempC);   // print the temperature in °C
+  // Serial.print("°C");
+  // Serial.print("  ~  "); // separator between °C and °F
+  // Serial.print(tempF);   // print the temperature in °F
+  // Serial.println("°F");
+  return tempC;
 }
