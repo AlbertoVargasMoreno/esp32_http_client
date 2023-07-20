@@ -7,10 +7,9 @@ based on:
 
 max30100 examples  
 
-
-### todo: 
-last update: july 2, 2023. Already Tested with web server
-- [x] check it compiles
-- [x] upload to board, seems to be working
-- [x] check request succesfully done
-- [ ] check sensor successfully reading, always reading zeros
+last update: jul 20st, 2023. tested with web server
+todo: 
+[x] check it compiles
+[x] upload to board, seems to be working
+[x] check request succesfully done
+[x] check sensor successfully reading, always reading zeros
