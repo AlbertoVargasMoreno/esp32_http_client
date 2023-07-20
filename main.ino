@@ -15,6 +15,9 @@
           |                |
           |                |
           +----------------+  
+ * pin3 vp en esp32 - adc
+ * pin14 20 en esp32 - gnd
+ * pin19 5V - vcc
 
   last update: may 1st, 2023. Not tested with web server
   todo: 
@@ -37,7 +40,8 @@ const char* password = "REIKA3110";
 
 // REPLACE with your Domain name and URL path or IP address with path
 // const char* serverName = "http://192.168.1.66/_experiments/esp_32/post_insert.php";
-const char* serverName = "http://192.168.0.22/_experiments/esp_32/post_insert.php";
+// const char* serverName = "http://192.168.0.22/_experiments/esp_32/post_insert.php";
+const char* serverName = "http://192.168.0.17/_experiments/esp_32/post_insert.php";
 // C:\wamp64\www\_experiments\esp_32\post_insert.php
 
 // Keep this API Key value to be compatible with the PHP code provided in the project page. 
@@ -46,9 +50,11 @@ String apiKeyValue = "tPmAT5Ab3j7F9";
 
 // String sensorName = "BME280";
 // String sensorLocation = "Office";
-
+#define REPORTING_PERIOD_MS 1000
+uint32_t tsLastReport = 0;
 PulseOximeter pulse_oximeter;
-float pulse_oximeter_values[2];
+// float pulse_oximeter_values[2];
+float heart_rate, spo2;
 
 #define ADC_VREF_mV    3300.0 // in millivolt
 #define ADC_RESOLUTION 4096.0
@@ -72,46 +78,52 @@ void setup() {
 
 void loop() {
     pulse_oximeter.update();  
-    read_sensor();
-    Serial.print("H:");
-    Serial.println(pulse_oximeter_values[0]);
-
-    Serial.print("O:");
-    Serial.println(pulse_oximeter_values[1]);
 
     float tempC = read_temperature_sensor();
-  
-  if (!(WiFi.status() == WL_CONNECTED)) {
-    Serial.println("WiFi Disconnected");
-  } else {
-    HTTPClient request;
+    heart_rate = pulse_oximeter.getHeartRate();
+    spo2 = pulse_oximeter.getSpO2();
+    if (millis() - tsLastReport > REPORTING_PERIOD_MS)
+    {
+        Serial.print("Heart rate:");
+        Serial.print(heart_rate);
+        Serial.print(" bpm / SpO2:");
+        Serial.print(spo2);
+        Serial.print(" %");
+        Serial.print(" Temperature:");
+        Serial.print(tempC);
+        Serial.println(" C");
     
-    request.begin(serverName);
-    request.addHeader("Content-Type", "application/x-www-form-urlencoded");
-    String httpRequestData = "api_key=" + apiKeyValue + "&sensor_names=" + "MAX30100"
-                          + "&temperature=" + String(tempC)
-                          + "&heart_rate=" + String(pulse_oximeter_values[0]) 
-                          + "&oxygen_saturation=" + String(pulse_oximeter_values[1]);
-    Serial.print("httpRequestData: ");
-    Serial.println(httpRequestData);
-    
-    // Send HTTP POST request
-    int httpResponseCode = request.POST(httpRequestData);
+      if (!(WiFi.status() == WL_CONNECTED)) {
+        Serial.println("WiFi Disconnected");
+      } else {
+        HTTPClient request;
         
-    if (httpResponseCode>0) {
-      Serial.print("HTTP Response code: ");
-      Serial.println(httpResponseCode);
+        request.begin(serverName);
+        request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+        String httpRequestData = "api_key=" + apiKeyValue + "&sensor_names=" + "MAX30100"
+                              + "&temperature=" + String(tempC)
+                              + "&heart_rate=" + String(heart_rate) 
+                              + "&oxygen_saturation=" + String(spo2);
+        Serial.print("httpRequestData: ");
+        Serial.println(httpRequestData);
+        
+        // Send HTTP POST request
+        int httpResponseCode = request.POST(httpRequestData);
+            
+        if (httpResponseCode>0) {
+          Serial.print("HTTP Response code: ");
+          Serial.println(httpResponseCode);
+        request.end();      
+        }
+        else {
+          Serial.print("Error code: ");
+          Serial.println(httpResponseCode);
+        }
+      }
+ 
+        tsLastReport = millis();
     }
-    else {
-      Serial.print("Error code: ");
-      Serial.println(httpResponseCode);
-    }
-    // Free resources
-    request.end();      
-  }
 
-  //Send an HTTP POST request every 30 seconds
-  delay(30000);
 }
 //--------------------------------------------------------------------------------------
 // Callback (registered below) fired when a pulse is detected
@@ -131,7 +143,7 @@ void setup_pulse_oximeter()
     // or wrong target chip
     if (!pulse_oximeter.begin()) {
         Serial.println("FAILED");
-        // for(;;);
+        for(;;);
     } else {
         Serial.println("SUCCESS");
     }
@@ -139,7 +151,7 @@ void setup_pulse_oximeter()
     // The default current for the IR LED is 50mA and it could be changed
     //   by uncommenting the following line. Check MAX30100_Registers.h for all the
     //   available options.
-    // pulse_oximeter.setIRLedCurrent(MAX30100_LED_CURR_7_6MA);
+    pulse_oximeter.setIRLedCurrent(MAX30100_LED_CURR_7_6MA);
 
     // Register a callback for the beat detection
     pulse_oximeter.setOnBeatDetectedCallback(onBeatDetected);
@@ -147,13 +159,13 @@ void setup_pulse_oximeter()
 /**
 *
 */
-void read_sensor()
-{
-  // float sensor_readings[2];
-  pulse_oximeter_values[0] = pulse_oximeter.getHeartRate();
-  pulse_oximeter_values[1] = pulse_oximeter.getSpO2();
-  // return sensor_readings;
-}
+// void read_sensor()
+// {
+//   // float sensor_readings[2];
+//   pulse_oximeter_values[0] = pulse_oximeter.getHeartRate();
+//   pulse_oximeter_values[1] = pulse_oximeter.getSpO2();
+//   // return sensor_readings;
+// }
 
 float read_temperature_sensor()
 {
